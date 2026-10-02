@@ -38,8 +38,27 @@ export function asString(value: unknown, max = 500): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim().slice(0, max) : null
 }
 
-export function isMember(memberIds: unknown, userId: string): memberIds is string[] {
-  return Array.isArray(memberIds) && memberIds.some((id) => id === userId)
+/**
+ * JSON fields arrive as arrays in normal SDK reads.  Actions can also receive
+ * their serialized form, so normalize both representations before using a
+ * roster for authorization or permission propagation.
+ */
+export function memberIdsOf(value: unknown): string[] {
+  const candidate = typeof value === 'string' ? safelyParseJsonArray(value) : value
+  if (!Array.isArray(candidate)) return []
+  return Array.from(new Set(candidate.filter((id): id is string => typeof id === 'string' && id.length > 0)))
+}
+
+function safelyParseJsonArray(value: string): unknown {
+  try {
+    return JSON.parse(value)
+  } catch {
+    return []
+  }
+}
+
+export function isMember(memberIds: unknown, userId: string): boolean {
+  return memberIdsOf(memberIds).includes(userId)
 }
 
 const usRegionCodes = new Set([

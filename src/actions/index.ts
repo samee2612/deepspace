@@ -1,6 +1,6 @@
 import type { ActionHandler, ActionResult, ActionTools } from 'deepspace/worker'
 import type { Env } from '../../worker'
-import { asString, isMember, stableHash, validateForecastWindow, weatherQuery } from '../lib/trip-utils'
+import { asString, isMember, memberIdsOf, stableHash, validateForecastWindow, weatherQuery } from '../lib/trip-utils'
 
 type Trip = {
   title: string
@@ -104,8 +104,9 @@ export const actions: Record<string, ActionHandler<Env>> = {
     if (!found.success || found.data.records.length === 0) return failure('This invitation link is invalid or has expired.', 'not_found')
 
     const trip = found.data.records[0]
-    const memberIds = Array.from(new Set([...(Array.isArray(trip.data.memberIds) ? trip.data.memberIds : []), userId]))
-    const joined = memberIds.length !== trip.data.memberIds.length
+    const existingMemberIds = memberIdsOf(trip.data.memberIds)
+    const memberIds = Array.from(new Set([...existingMemberIds, userId]))
+    const joined = !existingMemberIds.includes(userId)
     if (joined) {
       const updated = await tools.update<Trip>('trips', trip.recordId, { memberIds })
       if (!updated.success) return updated

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { stableHash, validateForecastWindow, weatherQuery } from './trip-utils'
+import { isMember, memberIdsOf, stableHash, validateForecastWindow, weatherQuery } from './trip-utils'
 
 describe('forecast-window validation', () => {
   const now = new Date('2026-10-01T15:00:00Z')
@@ -27,5 +27,13 @@ describe('OpenWeather location format', () => {
   it('turns familiar US city labels into the provider-required query', () => {
     expect(weatherQuery('Los Angeles, ca')).toBe('Los Angeles,CA,US')
     expect(weatherQuery('Paris, France')).toBe('Paris, France')
+  })
+})
+
+describe('member roster normalization', () => {
+  it('authorizes the same member from an array or serialized JSON field', () => {
+    expect(memberIdsOf('["organizer", "guest", "guest"]')).toEqual(['organizer', 'guest'])
+    expect(isMember('["organizer", "guest"]', 'guest')).toBe(true)
+    expect(isMember('not-json', 'guest')).toBe(false)
   })
 })
