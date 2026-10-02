@@ -13,7 +13,6 @@ type Trip = {
   searchHash: string
   weatherJson: WeatherPoint[]
   itineraryHash: string
-  itineraryStatus?: 'draft' | 'published'
 }
 
 type ActivityCard = {
@@ -27,7 +26,7 @@ type ActivityCard = {
 }
 
 type Vote = { tripId: string; activityId: string; voterId: string; memberIds: string[] }
-type Itinerary = { tripId: string; memberIds: string[]; content: string; sourceActivityIds: string[]; inputHash: string; status?: 'draft' | 'published'; publishedAt?: string; publishedBy?: string }
+type Itinerary = { tripId: string; memberIds: string[]; content: string; sourceActivityIds: string[]; inputHash: string }
 type WeatherPoint = { dt: number; temp: number; description: string; humidity?: number; icon?: string }
 
 type ExaResult = { title?: string; url?: string; text?: string; highlights?: string[]; image?: string }
@@ -64,12 +63,6 @@ async function requireMember(tools: ActionTools, tripId: string, userId: string)
   // collaborators-field evaluator expects, even if an older row was read in
   // its serialized JSON representation.
   return success({ ...trip.data, data: { ...trip.data.data, memberIds } })
-}
-
-function requireUnlocked(trip: TripRecord): ActionResult<TripRecord> {
-  return trip.data.itineraryStatus === 'published'
-    ? failure('This itinerary is final. Only the organizer can unlock planning again.', 'itinerary_locked')
-    : success(trip)
 }
 
 function requireOrganizer(trip: TripRecord, userId: string): ActionResult<TripRecord> {
@@ -112,7 +105,6 @@ export const actions: Record<string, ActionHandler<Env>> = {
       searchHash: '',
       weatherJson: [],
       itineraryHash: '',
-      itineraryStatus: 'draft',
     })
     return created.success ? success({ tripId: created.data.recordId }) : created
   },
@@ -161,8 +153,6 @@ export const actions: Record<string, ActionHandler<Env>> = {
     if (!trip.success) return trip
     const organizer = requireOrganizer(trip.data, userId)
     if (!organizer.success) return organizer
-    const unlocked = requireUnlocked(trip.data)
-    if (!unlocked.success) return unlocked
 
     const inputHash = stableHash({
       destination: trip.data.data.destination,
@@ -233,8 +223,6 @@ export const actions: Record<string, ActionHandler<Env>> = {
     if (!card.success) return failure('That activity is no longer available.', 'not_found')
     const trip = await requireMember(tools, card.data.record.data.tripId, userId)
     if (!trip.success) return trip
-    const unlocked = requireUnlocked(trip.data)
-    if (!unlocked.success) return unlocked
 
     const existing = await tools.query<Vote>('votes', { where: { activityId, voterId: userId }, limit: 1 })
     if (!existing.success) return existing
@@ -258,8 +246,6 @@ export const actions: Record<string, ActionHandler<Env>> = {
     if (!trip.success) return trip
     const organizer = requireOrganizer(trip.data, userId)
     if (!organizer.success) return organizer
-    const unlocked = requireUnlocked(trip.data)
-    if (!unlocked.success) return unlocked
     const [cardsResult, votesResult, itineraryResult] = await Promise.all([
       tools.query<ActivityCard>('activityCards', { where: { tripId }, limit: 20 }),
       tools.query<Vote>('votes', { where: { tripId }, limit: 100 }),
@@ -312,9 +298,6 @@ export const actions: Record<string, ActionHandler<Env>> = {
       content,
       sourceActivityIds: selected.map((card) => card.id),
       inputHash,
-      status: 'draft',
-      publishedAt: '',
-      publishedBy: '',
     }
     const saved = existing
       ? await tools.update<Itinerary>('itineraries', existing.recordId, data)
@@ -322,42 +305,5 @@ export const actions: Record<string, ActionHandler<Env>> = {
     if (!saved.success) return saved
     await tools.update<Trip>('trips', tripId, { itineraryHash: inputHash })
     return success({ cached: false, content })
-  },
-
-  async publishItinerary({ params, tools, userId }) {
-    const tripId = asString(params.tripId)
-    if (!tripId) return failure('Select a trip first.')
-    const trip = await requireMember(tools, tripId, userId)
-    if (!trip.success) return trip
-    const organizer = requireOrganizer(trip.data, userId)
-    if (!organizer.success) return organizer
-    if (trip.data.data.itineraryStatus === 'published') return success({ published: true, alreadyPublished: true })
-    const itinerary = await tools.query<Itinerary>('itineraries', { where: { tripId }, limit: 1 })
-    if (!itinerary.success) return itinerary
-    const current = itinerary.data.records[0]
-    if (!current) return failure('Build a draft itinerary before publishing it.', 'no_itinerary')
-    const publishedAt = new Date().toISOString()
-    const saved = await tools.update<Itinerary>('itineraries', current.recordId, { status: 'published', publishedAt, publishedBy: userId })
-    if (!saved.success) return saved
-    const updated = await tools.update<Trip>('trips', tripId, { itineraryStatus: 'published' })
-    return updated.success ? success({ published: true, alreadyPublished: false }) : updated
-  },
-
-  async unlockItinerary({ params, tools, userId }) {
-    const tripId = asString(params.tripId)
-    if (!tripId) return failure('Select a trip first.')
-    const trip = await requireMember(tools, tripId, userId)
-    if (!trip.success) return trip
-    const organizer = requireOrganizer(trip.data, userId)
-    if (!organizer.success) return organizer
-    const itinerary = await tools.query<Itinerary>('itineraries', { where: { tripId }, limit: 1 })
-    if (!itinerary.success) return itinerary
-    const current = itinerary.data.records[0]
-    if (current) {
-      const saved = await tools.update<Itinerary>('itineraries', current.recordId, { status: 'draft', publishedAt: '', publishedBy: '' })
-      if (!saved.success) return saved
-    }
-    const updated = await tools.update<Trip>('trips', tripId, { itineraryStatus: 'draft' })
-    return updated.success ? success({ unlocked: true }) : updated
   },
 }

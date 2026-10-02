@@ -16,9 +16,9 @@ only provides a reliable rolling five-day forecast.
 - **Auth + shared realtime records:** every board and its related activity,
   vote, and itinerary rows use a `memberIds` collaborator field. The Durable
   Object enforces shared reads server-side; writes flow through checked actions.
-- **Clear decision ownership:** the board creator alone can discover ideas,
-  build a draft, publish the final itinerary, or unlock planning. Members vote
-  on the shared options and see the resulting draft or final plan in real time.
+- **Clear decision ownership:** the board creator alone can discover ideas and
+  build the itinerary. Members vote on the shared options and see the resulting
+  plan in real time.
 - **Exa search:** finds up to six candidate activity sources for the destination
   and stated preferences.
 - **OpenWeather forecast:** supplies the weather signal used by the plan.
@@ -43,7 +43,7 @@ pnpm deploy
 For the full multi-user test, create two local DeepSpace test accounts and run
 `npx deepspace test run all`. The important manual flow is: creator makes a
 board → copies the invite → a second account joins → creator discovers → both
-accounts vote → creator builds and publishes the itinerary.
+accounts vote → creator builds the itinerary.
 
 ## Submission note
 
