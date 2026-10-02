@@ -55,8 +55,12 @@ async function getTrip(tools: ActionTools, tripId: string): Promise<ActionResult
 async function requireMember(tools: ActionTools, tripId: string, userId: string): Promise<ActionResult<{ recordId: string; data: Trip }>> {
   const trip = await getTrip(tools, tripId)
   if (!trip.success) return trip
-  if (!isMember(trip.data.data.memberIds, userId)) return failure('You do not have access to this trip.', 'forbidden')
-  return trip
+  const memberIds = memberIdsOf(trip.data.data.memberIds)
+  if (!isMember(memberIds, userId)) return failure('You do not have access to this trip.', 'forbidden')
+  // Keep every downstream record write in the canonical array form that the
+  // collaborators-field evaluator expects, even if an older row was read in
+  // its serialized JSON representation.
+  return success({ ...trip.data, data: { ...trip.data.data, memberIds } })
 }
 
 function inviteCode(): string {
@@ -118,7 +122,7 @@ export const actions: Record<string, ActionHandler<Env>> = {
       tools.query<Vote>('votes', { where: { tripId: trip.recordId }, limit: 100 }),
       tools.query<Itinerary>('itineraries', { where: { tripId: trip.recordId }, limit: 1 }),
     ])
-    await Promise.all([
+    const propagation = await Promise.all([
       ...related[0].success
         ? related[0].data.records.map((record) => tools.update<ActivityCard>('activityCards', record.recordId, { memberIds }))
         : [],
@@ -129,6 +133,8 @@ export const actions: Record<string, ActionHandler<Env>> = {
         ? related[2].data.records.map((record) => tools.update<Itinerary>('itineraries', record.recordId, { memberIds }))
         : [],
     ])
+    const propagationError = propagation.find((result) => !result.success)
+    if (propagationError && !propagationError.success) return propagationError
     return success({ tripId: trip.recordId, joined })
   },
 
