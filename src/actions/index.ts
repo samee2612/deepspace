@@ -159,6 +159,8 @@ export const actions: Record<string, ActionHandler<Env>> = {
     if (!tripId) return failure('Select a trip first.')
     const trip = await requireMember(tools, tripId, userId)
     if (!trip.success) return trip
+    const organizer = requireOrganizer(trip.data, userId)
+    if (!organizer.success) return organizer
     const unlocked = requireUnlocked(trip.data)
     if (!unlocked.success) return unlocked
 
@@ -254,6 +256,8 @@ export const actions: Record<string, ActionHandler<Env>> = {
     if (!tripId) return failure('Select a trip first.')
     const trip = await requireMember(tools, tripId, userId)
     if (!trip.success) return trip
+    const organizer = requireOrganizer(trip.data, userId)
+    if (!organizer.success) return organizer
     const unlocked = requireUnlocked(trip.data)
     if (!unlocked.success) return unlocked
     const [cardsResult, votesResult, itineraryResult] = await Promise.all([

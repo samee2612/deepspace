@@ -1,8 +1,8 @@
 # Roam Consensus
 
 A focused, private group planner for a short-notice getaway. Create a board,
-share a signed-in invitation link, discover a small set of sourced activities,
-vote live, and turn the group’s choices into one weather-aware itinerary.
+share a signed-in invitation link, curate a small set of sourced activities,
+collect live votes, and turn the group’s choices into one weather-aware itinerary.
 
 ## Why this scope
 
@@ -16,6 +16,9 @@ only provides a reliable rolling five-day forecast.
 - **Auth + shared realtime records:** every board and its related activity,
   vote, and itinerary rows use a `memberIds` collaborator field. The Durable
   Object enforces shared reads server-side; writes flow through checked actions.
+- **Clear decision ownership:** the board creator alone can discover ideas,
+  build a draft, publish the final itinerary, or unlock planning. Members vote
+  on the shared options and see the resulting draft or final plan in real time.
 - **Exa search:** finds up to six candidate activity sources for the destination
   and stated preferences.
 - **OpenWeather forecast:** supplies the weather signal used by the plan.
@@ -38,9 +41,9 @@ pnpm deploy
 ```
 
 For the full multi-user test, create two local DeepSpace test accounts and run
-`npx deepspace test run all`. The important manual flow is: create board → copy
-invite → join in a second account → discover → vote in both sessions → generate
-the itinerary.
+`npx deepspace test run all`. The important manual flow is: creator makes a
+board → copies the invite → a second account joins → creator discovers → both
+accounts vote → creator builds and publishes the itinerary.
 
 ## Submission note
 
