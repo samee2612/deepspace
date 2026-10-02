@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useAuthProfileReady, useQuery } from 'deepspace'
+import { AuthGate, AuthOverlay, useAuthProfileReady, useQuery } from 'deepspace'
 import { CalendarDays, Check, CloudSun, Compass, Copy, ExternalLink, LoaderCircle, MapPin, Sparkles, Users } from 'lucide-react'
 import { Button, Input, Textarea, useToast } from '@/components/ui'
 import { callAction, localIsoDate } from '@/lib/trip-client'
@@ -15,6 +15,10 @@ type FormData = { title: string; destination: string; startDate: string; endDate
 const initialForm = (): FormData => ({ title: 'A small weekend escape', destination: '', startDate: localIsoDate(1), endDate: localIsoDate(2), preferences: 'easygoing, outdoors, local culture' })
 
 export default function HomePage() {
+  return <AuthGate fallback={<PlannerSignIn />}><PlannerPage /></AuthGate>
+}
+
+function PlannerPage() {
   const { user } = useAuthProfileReady({ requireUser: true })
   const { success, error } = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -80,3 +84,4 @@ function ItineraryCard({ itinerary }: { itinerary: Itinerary }) { return <sectio
 function EmptyBoard({ open }: { open: () => void }) { return <div className="mt-8 rounded-3xl border border-dashed border-border bg-card/50 px-6 py-16 text-center"><Compass className="mx-auto h-9 w-9 text-primary" /><h2 className="mt-4 text-xl font-semibold">Start with one small escape</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">Create a board, bring your group in with one private link, and use live votes to avoid the endless group chat.</p><Button className="mt-6" onClick={open}>Create a getaway</Button></div> }
 function NoActivities() { return <div className="rounded-2xl border border-dashed border-border p-10 text-center"><MapPin className="mx-auto h-7 w-7 text-muted-foreground" /><p className="mt-3 font-medium">No activity cards yet</p><p className="mt-1 text-sm text-muted-foreground">Run discovery to collect a small, sourced set for the group to vote on.</p></div> }
 function Loading({ label, compact = false }: { label: string; compact?: boolean }) { return <div className={`flex items-center justify-center gap-2 text-sm text-muted-foreground ${compact ? 'rounded-2xl border border-border p-10' : 'min-h-[50vh]'}`}><LoaderCircle className="h-4 w-4 animate-spin" />{label}</div> }
+function PlannerSignIn() { const [open, setOpen] = useState(false); return <div className="mx-auto flex min-h-[70vh] max-w-lg items-center px-6"><div className="w-full rounded-3xl border border-border bg-card p-8 text-center"><Compass className="mx-auto h-9 w-9 text-primary" /><h1 className="mt-4 text-xl font-semibold">Your group board is private</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">Sign in to create or join a Roam Consensus board. Shared activity cards, votes, and itineraries are only visible to invited members.</p><Button className="mt-6" onClick={() => setOpen(true)}>Sign in to plan</Button>{open && <AuthOverlay onClose={() => setOpen(false)} />}</div></div> }
