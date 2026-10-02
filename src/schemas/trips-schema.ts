@@ -20,6 +20,7 @@ export const tripsSchema: CollectionSchema = {
     { name: 'searchHash', storage: 'text', interpretation: 'plain', default: '' },
     { name: 'weatherJson', storage: 'text', interpretation: { kind: 'json' }, default: [] },
     { name: 'itineraryHash', storage: 'text', interpretation: 'plain', default: '' },
+    { name: 'itineraryStatus', storage: 'text', interpretation: 'plain', default: 'draft' },
   ],
   permissions: sharedPermissions,
 }
@@ -62,6 +63,9 @@ export const itinerariesSchema: CollectionSchema = {
     { name: 'content', storage: 'text', interpretation: 'plain', required: true },
     { name: 'sourceActivityIds', storage: 'text', interpretation: { kind: 'json' }, required: true },
     { name: 'inputHash', storage: 'text', interpretation: 'plain', required: true },
+    { name: 'status', storage: 'text', interpretation: 'plain', default: 'draft' },
+    { name: 'publishedAt', storage: 'text', interpretation: { kind: 'date' }, default: '' },
+    { name: 'publishedBy', storage: 'text', interpretation: 'plain', default: '' },
   ],
   permissions: sharedPermissions,
 }
