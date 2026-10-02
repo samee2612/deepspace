@@ -1,6 +1,6 @@
 import type { ActionHandler, ActionResult, ActionTools } from 'deepspace/worker'
 import type { Env } from '../../worker'
-import { asString, isMember, stableHash, validateForecastWindow } from '../lib/trip-utils'
+import { asString, isMember, stableHash, validateForecastWindow, weatherQuery } from '../lib/trip-utils'
 
 type Trip = {
   title: string
@@ -152,7 +152,7 @@ export const actions: Record<string, ActionHandler<Env>> = {
         contents: { highlights: { highlightsPerUrl: 1, maxCharacters: 280 } },
       }),
       tools.integration<WeatherPoint[]>('openweathermap/forecast', {
-        location: trip.data.data.destination,
+        q: weatherQuery(trip.data.data.destination),
         units: 'imperial',
       }),
     ])

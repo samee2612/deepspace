@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { stableHash, validateForecastWindow } from './trip-utils'
+import { stableHash, validateForecastWindow, weatherQuery } from './trip-utils'
 
 describe('forecast-window validation', () => {
   const now = new Date('2026-10-01T15:00:00Z')
@@ -20,5 +20,12 @@ describe('request cache keys', () => {
     const brief = { destination: 'Santa Cruz', preferences: 'walkable', cards: ['a', 'b'] }
     expect(stableHash(brief)).toBe(stableHash(brief))
     expect(stableHash({ ...brief, cards: ['a', 'c'] })).not.toBe(stableHash(brief))
+  })
+})
+
+describe('OpenWeather location format', () => {
+  it('turns familiar US city labels into the provider-required query', () => {
+    expect(weatherQuery('Los Angeles, ca')).toBe('Los Angeles,CA,US')
+    expect(weatherQuery('Paris, France')).toBe('Paris, France')
   })
 })

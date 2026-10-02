@@ -41,3 +41,18 @@ export function asString(value: unknown, max = 500): string | null {
 export function isMember(memberIds: unknown, userId: string): memberIds is string[] {
   return Array.isArray(memberIds) && memberIds.some((id) => id === userId)
 }
+
+const usRegionCodes = new Set([
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA',
+  'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK',
+  'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC', 'PR',
+])
+
+/** OpenWeather requires `city,state,country` rather than the familiar US `city, state` label. */
+export function weatherQuery(destination: string): string {
+  const parts = destination.split(',').map((part) => part.trim()).filter(Boolean)
+  if (parts.length === 2 && usRegionCodes.has(parts[1].toUpperCase())) {
+    return `${parts[0]},${parts[1].toUpperCase()},US`
+  }
+  return destination.trim()
+}
