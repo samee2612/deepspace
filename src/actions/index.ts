@@ -268,7 +268,7 @@ export const actions: Record<string, ActionHandler<Env>> = {
 
     const inputHash = stableHash({ searchHash: trip.data.data.searchHash, selected: selected.map(({ id, votes }) => ({ id, votes })) })
     const existing = itineraryResult.success ? itineraryResult.data.records[0] : undefined
-    if (existing?.data.inputHash === inputHash) return success({ cached: true, content: existing.data.content })
+    if (existing) return failure('An itinerary has already been built for this board.', 'itinerary_exists')
 
     const weather = safelyParseWeather(trip.data.data.weatherJson)
       .slice(0, 12)
@@ -303,9 +303,7 @@ export const actions: Record<string, ActionHandler<Env>> = {
       sourceActivityIds: selected.map((card) => card.id),
       inputHash,
     }
-    const saved = existing
-      ? await tools.update<Itinerary>('itineraries', existing.recordId, data)
-      : await tools.create<Itinerary>('itineraries', data)
+    const saved = await tools.create<Itinerary>('itineraries', data)
     if (!saved.success) return saved
     await tools.update<Trip>('trips', tripId, { itineraryHash: inputHash })
     return success({ cached: false, content })
