@@ -68,7 +68,7 @@ async function requireMember(tools: ActionTools, tripId: string, userId: string)
 function requireOrganizer(trip: TripRecord, userId: string): ActionResult<TripRecord> {
   return trip.createdBy === userId
     ? success(trip)
-    : failure('Only the board organizer can publish or unlock the final itinerary.', 'organizer_only')
+    : failure('Only the board organizer can discover ideas or build the itinerary.', 'organizer_only')
 }
 
 function inviteCode(): string {

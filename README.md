@@ -1,64 +1,90 @@
 # Roam Consensus
 
-A focused, private group planner for a short-notice getaway. Create a board,
-share a signed-in invitation link, curate a small set of sourced activities,
-collect live votes, and turn the group’s choices into one weather-aware itinerary.
+Roam Consensus is a private planner for a short-notice getaway. An organizer
+curates a small, sourced set of activities, invited members vote in real time,
+and the organizer builds one weather-aware itinerary from the group’s choices.
+
+Live app: https://roam-consensus-2026.app.space
+
+## Core flow
+
+1. The organizer creates a board with a destination, dates, and preferences.
+2. They share a signed-in invitation link with the group.
+3. The organizer discovers up to six sourced activity options.
+4. Members review the same options and cast one vote per activity.
+5. The organizer builds one shared itinerary from the voted options and the
+   five-day forecast.
+6. Voting and itinerary generation close once that itinerary is created, so the
+   group has a clear result.
+
+Boards are labeled as either "Owned by you" or "Shared with you." Each board
+shows the organizer and a private roster of joined member names.
 
 ## Why this scope
 
-This deliberately plans **activities only**. It does not claim booking
-availability, prices, restaurant reservations, transportation, or lodging.
-The trip must fall within the next five days because the weather integration
-only provides a reliable rolling five-day forecast.
+This app plans activities only. It does not claim booking availability, prices,
+restaurant reservations, transportation, or lodging. The trip must be within
+the next five days because the forecast provider supplies a reliable rolling
+five-day window.
 
-## DeepSpace usage
+The main product decision is intentionally asymmetric: the organizer owns the
+curation and synthesis steps, while members supply the group signal through
+votes. That avoids competing itineraries and limits paid integration calls.
 
-- **Auth + shared realtime records:** every board and its related activity,
-  vote, and itinerary rows use a `memberIds` collaborator field. The Durable
-  Object enforces shared reads server-side; writes flow through checked actions.
-- **Clear decision ownership:** the board creator alone can discover ideas and
-  build the itinerary. Members vote on the shared options and see the resulting
-  plan in real time; voting and itinerary generation close automatically once
-  it is built.
-- **Exa search:** finds up to six candidate activity sources for the destination
-  and stated preferences.
-- **OpenWeather forecast:** supplies the weather signal used by the plan.
-- **OpenAI chat completion:** produces one concise Markdown itinerary from only
-  the selected cards and forecast. It is instructed never to invent pricing,
-  availability, or bookings.
+## DeepSpace integrations
 
-The three external integrations are developer-billed but guarded by sign-in,
-trip membership, disabled in-flight controls, and stable input hashes. An
-unchanged discovery or itinerary request reuses saved output rather than
-spending again.
+- **Auth and real-time records:** every trip, activity card, vote, and itinerary
+  uses a `memberIds` collaborator field. Shared reads are enforced by the
+  Durable Object. Server actions separately verify membership and organizer
+  ownership before any protected operation.
+- **Exa search:** finds up to six destination-specific activity candidates with
+  source URLs and snippets.
+- **OpenWeather forecast:** adds a weather signal to the itinerary and restricts
+  dates to the next five days.
+- **OpenAI chat completion:** writes concise Markdown from only the voted cards
+  and forecast. Its instructions prohibit invented prices, availability, or
+  reservations.
+
+External calls run only on the server. They are developer-billed, never expose
+provider credentials, and are limited by sign-in, membership checks, owner-only
+controls, disabled in-flight buttons, and stable discovery hashes.
 
 ## Run and verify
 
 ```bash
 pnpm dev
 pnpm validate
-pnpm test
+npx deepspace test run
 pnpm deploy
 ```
 
-For the full multi-user test, create two local DeepSpace test accounts and run
-`npx deepspace test run all`. The important manual flow is: creator makes a
-board → copies the invite → a second account joins → creator discovers → both
-accounts vote → creator builds the itinerary.
+The intended manual check is: organizer creates a board, copies the invite,
+another signed-in account joins, organizer discovers ideas, both accounts vote,
+and organizer builds the itinerary. Then verify that vote and build controls
+are disabled for the completed board.
 
 ## Submission note
 
-**Built:** Roam Consensus, a collaborative short-notice getaway planner.
+**Built:** Roam Consensus, a collaborative short-notice getaway planner with a
+clear organizer-led decision flow.
 
-**Main tradeoff:** I kept the product to activity selection and did not add
-booking or pricing flows. That makes the promise verifiable and leaves time to
-make the private sharing, live voting, and integration path reliable.
+**DeepSpace integrations used:** DeepSpace auth and real-time shared records,
+Exa search, OpenWeather forecast, and OpenAI chat completion.
 
-**Agent contribution:** Codex scaffolded the DeepSpace app, designed the record
-schemas/actions, implemented the React UI and integration orchestration, and
-added validation/tests.
+**Main tradeoff:** I kept the product to activity selection and left out booking,
+prices, restaurants, transport, and accommodation. I also made discovery and
+itinerary generation organizer-only. This makes the important path complete,
+keeps paid calls bounded, and gives the group one unambiguous result.
 
-**What I verified:** TypeScript, unit tests, production build, static landing
-behavior, auth-protected planner routes, and the deployed happy path should be
-checked with two signed-in test accounts before submission. No secrets are
-committed; DeepSpace owns the app credentials and integration proxy.
+**Agent contribution:** Codex scaffolded the app, designed the schemas and
+server actions, implemented the React interface and integration orchestration,
+and added validation coverage. I directed the product decisions, tested the
+owner and member workflow with separate accounts, and iterated on permissions,
+the roster, weather handling, and the final locked decision flow.
+
+**What I verified:** I created boards, shared an invite, joined with a separate
+account, checked the live roster and role-specific controls, cast votes, built
+an itinerary, and confirmed that voting and itinerary generation close after
+completion. I also ran TypeScript, unit, lint, and platform smoke checks. No
+provider credentials or secrets are committed; DeepSpace holds the integration
+credentials and proxy.
