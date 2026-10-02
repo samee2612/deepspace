@@ -18,7 +18,7 @@ only provides a reliable rolling five-day forecast.
   Object enforces shared reads server-side; writes flow through checked actions.
 - **Clear decision ownership:** the board creator alone can discover ideas and
   build the itinerary. Members vote on the shared options and see the resulting
-  plan in real time.
+  plan in real time; voting closes automatically once it is built.
 - **Exa search:** finds up to six candidate activity sources for the destination
   and stated preferences.
 - **OpenWeather forecast:** supplies the weather signal used by the plan.

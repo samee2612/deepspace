@@ -224,6 +224,10 @@ export const actions: Record<string, ActionHandler<Env>> = {
     const trip = await requireMember(tools, card.data.record.data.tripId, userId)
     if (!trip.success) return trip
 
+    const itinerary = await tools.query<Itinerary>('itineraries', { where: { tripId: trip.data.recordId }, limit: 1 })
+    if (!itinerary.success) return itinerary
+    if (itinerary.data.records[0]) return failure('Voting is closed because the organizer has already built the itinerary.', 'voting_closed')
+
     const existing = await tools.query<Vote>('votes', { where: { activityId, voterId: userId }, limit: 1 })
     if (!existing.success) return existing
     if (existing.data.records[0]) {
